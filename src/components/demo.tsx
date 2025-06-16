@@ -1,6 +1,6 @@
 export default function Demo() {
   return (
-    <div className="w-full h-svh bg-black text-white flex items-center justify-center text-4xl pb-4">
+    <div className="flex h-svh w-full items-center justify-center bg-black pb-4 text-4xl text-white">
       Look at that - It's a Space Station
     </div>
   );
