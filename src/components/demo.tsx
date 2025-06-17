@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/hooks/useTheme";
 import { useState } from "react";
+import { Calculator } from "./Calculator";
 
 export default function Demo() {
   const { setTheme } = useTheme();
@@ -9,6 +10,7 @@ export default function Demo() {
     <div className="bg-background text-foreground flex h-svh w-full items-center justify-center gap-4 pb-4 text-4xl">
       Look at that - It's a Space Station{" "}
       <Button
+        className="cursor-pointer"
         onClick={() => {
           if (dark) {
             setTheme("light");
@@ -18,7 +20,7 @@ export default function Demo() {
           setDark((dark) => !dark);
         }}
       >
-        Click Here
+        <Calculator />
       </Button>
     </div>
   );
