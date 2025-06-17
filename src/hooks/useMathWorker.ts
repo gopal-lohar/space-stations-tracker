@@ -1,7 +1,7 @@
+import type { MathWorkerAPI } from "@/workers/math.worker";
 import type { Remote } from "comlink";
 import { wrap } from "comlink";
 import { useEffect, useRef, useState } from "react";
-import type { MathWorkerAPI } from "../workers/math.worker";
 
 export function useMathWorker() {
   const workerRef = useRef<Worker | null>(null);
@@ -11,7 +11,7 @@ export function useMathWorker() {
   useEffect(() => {
     // Create worker
     workerRef.current = new Worker(
-      new URL("../workers/math.worker.ts", import.meta.url),
+      new URL("@/workers/math.worker.ts", import.meta.url),
       { type: "module" }
     );
 

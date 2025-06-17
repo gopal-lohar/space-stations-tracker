@@ -1,5 +1,5 @@
+import { useMathWorker } from "@/hooks/useMathWorker";
 import { useState } from "react";
-import { useMathWorker } from "../hooks/useMathWorker";
 
 export function Calculator() {
   const { api, isReady } = useMathWorker();
