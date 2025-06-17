@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/hooks/useTheme";
 import { useState } from "react";
+import { Calculator } from "./Calculator";
 
 export default function Demo() {
   const { setTheme } = useTheme();
@@ -20,6 +21,7 @@ export default function Demo() {
       >
         Click Here
       </Button>
+      <Calculator />
     </div>
   );
 }
