@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/hooks/useTheme";
+import { useTleQuery } from "@/hooks/useTleQuery";
+import { satelliteIds } from "@/lib/core/getTle";
 import { useState } from "react";
-import { Calculator } from "./Calculator";
 
 export default function Demo() {
   const { setTheme } = useTheme();
@@ -21,7 +22,18 @@ export default function Demo() {
       >
         Click Here
       </Button>
-      <Calculator />
+      <Tle />
     </div>
+  );
+}
+
+function Tle() {
+  const tleQuery = useTleQuery({ noradId: satelliteIds.iss });
+  return tleQuery.isLoading ? (
+    "Loading..."
+  ) : tleQuery.isError ? (
+    "Error..."
+  ) : (
+    <div>{JSON.stringify(tleQuery.data)}</div>
   );
 }
