@@ -1,10 +1,9 @@
+import { API_URL } from "@/lib/const";
 import type { Tle } from "@/lib/core";
 import { DAY } from "@/lib/core/helpers/utils";
 import { getLocalData, setLocalData } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-
-const API_URL = "https://tle.ivanstanojevic.me/api/tle";
 
 export async function getTle(noradId: number): Promise<Tle> {
   const res = await axios.get<Tle>(`${API_URL}/${noradId}`);
