@@ -44,7 +44,7 @@ export default function SatelliteInfo({
     val >= 0 ? `+${val.toFixed(4)}` : val.toFixed(4);
 
   return (
-    <div className="sticky top-0 max-h-[calc(100svh-4rem-1rem)] overflow-auto rounded-md border-2 p-4">
+    <div className="rounded-md border-2 p-4 lg:sticky lg:top-0 lg:max-h-[calc(100svh-4rem-1rem)] lg:overflow-auto">
       {!isReady || !tleQuery.data ? (
         "Loading Data..."
       ) : stateVectorQuery.data ? (
