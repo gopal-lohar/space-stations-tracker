@@ -38,9 +38,10 @@ function Passes({
   }, []);
   return (
     <div>
-      <Button onClick={() => setLocation(null)}>Reset Location</Button>
-      <div>
-        <code>{JSON.stringify(location, null, 2)}</code>
+      <div className="flex justify-end pb-2">
+        <Button variant="secondary" onClick={() => setLocation(null)}>
+          Reset Location
+        </Button>
       </div>
       {things.map((thing, i) => (
         <div key={i} className="mb-2 border-2 p-4">

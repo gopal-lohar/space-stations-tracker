@@ -26,6 +26,20 @@ export default function SatelliteInfo({
     refetchInterval: SECOND,
   });
 
+  const sunTimeQuery = useQuery({
+    queryKey: ["sun_time", location],
+    queryFn: () => {
+      if (location) {
+        return api!.getSunTimes(
+          location.latitude,
+          location.longitude,
+          new Date()
+        );
+      }
+    },
+    enabled: isReady && !!location,
+  });
+
   const formatCoord = (val: number) =>
     val >= 0 ? `+${val.toFixed(4)}` : val.toFixed(4);
 
@@ -57,6 +71,35 @@ export default function SatelliteInfo({
       ) : (
         "calculating..."
       )}
+      {location != null &&
+        (sunTimeQuery.isLoading ? (
+          "Calculating Sun Time"
+        ) : sunTimeQuery.error ? (
+          "Error Calculating Sun Time"
+        ) : sunTimeQuery.data ? (
+          <>
+            <div className="flex justify-between gap-2">
+              <span>Sunrise</span>
+              <span className="font-mono">
+                {new Date(sunTimeQuery.data.sunrise).toLocaleTimeString()}
+              </span>
+            </div>
+            <div className="flex justify-between gap-2">
+              <span>Solarnoon</span>
+              <span className="font-mono">
+                {new Date(sunTimeQuery.data.solarNoon).toLocaleTimeString()}
+              </span>
+            </div>
+            <div className="flex justify-between gap-2">
+              <span>Sunset</span>
+              <span className="font-mono">
+                {new Date(sunTimeQuery.data.sunset).toLocaleTimeString()}
+              </span>
+            </div>
+          </>
+        ) : (
+          `Error Calculating Sun Time ${sunTimeQuery.error}, loc ${location}`
+        ))}
     </div>
   );
 }
