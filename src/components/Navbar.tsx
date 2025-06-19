@@ -15,11 +15,11 @@ export default function Navbar({
   setSatellite: (value: Satellite) => void;
 }) {
   return (
-    <nav className="bg-card h-16">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-2">
-        <div className="flex flex-col items-center">
-          <span className="text-2xl font-light">Look at that!</span>
-          <span className="text-sm font-light">it's a Space Station</span>
+    <nav className="bg-card sticky top-0 col-span-full h-16 px-2">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between">
+        <div className="flex flex-col items-center opacity-75">
+          <span className="text-xl">Look at that!</span>
+          <span className="text-sm">it's a Space Station</span>
         </div>
         <Select
           defaultValue={satellite.noradId.toString()}
@@ -38,7 +38,10 @@ export default function Navbar({
           <SelectContent>
             {satellites.map((sat) => {
               return (
-                <SelectItem value={sat.noradId.toString()}>
+                <SelectItem
+                  value={sat.noradId.toString()}
+                  key={sat.noradId.toString()}
+                >
                   {sat.shortName}
                 </SelectItem>
               );

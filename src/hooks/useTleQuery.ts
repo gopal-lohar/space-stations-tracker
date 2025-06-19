@@ -10,7 +10,7 @@ export async function getTle(noradId: number): Promise<Tle> {
   return res.data;
 }
 
-export function useTleQuery({ noradId }: { noradId: number }) {
+export function useTleQuery(noradId: number) {
   const storageKey = `cache_tle_${noradId}`;
 
   return useQuery({

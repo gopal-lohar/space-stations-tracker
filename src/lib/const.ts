@@ -1,4 +1,5 @@
 export const LOCAL_SATELLITE_KEY = "selected_satellite";
+export const LOCAL_LOCATION_KEY = "local_location";
 export const API_URL = "https://tle.ivanstanojevic.me/api/tle";
 
 export type Satellite = {

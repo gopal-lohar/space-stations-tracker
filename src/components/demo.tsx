@@ -30,7 +30,7 @@ export default function Demo() {
 }
 
 function StateVectorISS({ noradId }: { noradId: number }) {
-  const tleQuery = useTleQuery({ noradId });
+  const tleQuery = useTleQuery(noradId);
   const { api, isReady } = useCoreWorker();
   const stateVectorQuery = useQuery({
     queryKey: ["state_vector", noradId],
