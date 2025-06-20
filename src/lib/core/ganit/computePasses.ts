@@ -4,12 +4,14 @@ import { calculateStateVector } from "./calculateStateVector";
 import { calculateVisibility } from "./calculateVisibility";
 
 export function computePasses({
+  objectName,
   startTime,
   endTime,
   observerLocation,
   tle,
   delta,
 }: {
+  objectName: string;
   startTime: Date;
   endTime: Date;
   observerLocation: ObserverLocation;
@@ -31,6 +33,7 @@ export function computePasses({
       );
       if (currentVisibility.isVisible) {
         const pass = calculatePass(
+          objectName,
           new Date(currentTime.getTime() - delta),
           tle,
           observerLocation
@@ -51,6 +54,7 @@ export function computePasses({
 }
 
 function calculatePass(
+  objectName: string,
   initialTime: Date,
   tle: Tle,
   observerLocation: ObserverLocation
@@ -81,6 +85,7 @@ function calculatePass(
 
   // for the time when the sat is visible
   const currentPass = {
+    objectName,
     startingTime: currentTime.toISOString(),
     endingTime: currentTime.toISOString(),
     startElevation: currentVisibility.lookAnglesInDegrees.elevation,

@@ -5,6 +5,7 @@ import type { Satellite } from "@/lib/const";
 import { DAY, SECOND } from "@/lib/core/helpers/utils";
 import type { ObserverLocation, Pass, Tle } from "@/lib/core/types";
 import { useQuery } from "@tanstack/react-query";
+import { Info } from "lucide-react";
 import { Button } from "./ui/button";
 
 export default function PassesSection({
@@ -31,6 +32,7 @@ export default function PassesSection({
             location={location}
             setLocation={setLocation}
             tle={tleQuery.data}
+            satellite={satellite}
           />
         )
       )}
@@ -44,10 +46,12 @@ function Passes({
   location,
   setLocation,
   tle,
+  satellite,
 }: {
   location: ObserverLocation | null;
   setLocation: (value: ObserverLocation | null) => void;
   tle: Tle;
+  satellite: Satellite;
 }) {
   const { api, isReady } = useCoreWorker();
 
@@ -57,7 +61,7 @@ function Passes({
   const endTime = new Date(startTime.getTime() + period);
 
   const passesQuery = useQuery({
-    queryKey: ["passes", location],
+    queryKey: ["passes", location, satellite, tle],
     queryFn: async () => {
       if (location) {
         const data = await api!.computePasses({
@@ -66,6 +70,7 @@ function Passes({
           endTime,
           delta,
           observerLocation: location,
+          objectName: `${satellite.shortName} (${satellite.module})`,
         });
 
         const passes: DayPass[] = [];
@@ -100,21 +105,24 @@ function Passes({
 
   return (
     <div>
-      <div className="flex justify-end pb-2">
+      <div className="flex items-center justify-between border-b-2 pb-2">
+        <span className="text-xl">{satellite.longName}</span>
         <Button variant="secondary" onClick={() => setLocation(null)}>
           Reset Location
         </Button>
       </div>
-      <div className="space-y-2">
-        {passesQuery.isLoading
-          ? "Calculating passes"
-          : passesQuery.isError
-            ? "Error while calculating"
-            : passesQuery.data
-              ? passesQuery.data.map((dayPass, index) => (
-                  <DayPasses dayPasses={dayPass} key={index} />
-                ))
-              : ""}
+      <div>
+        <div className="space-y-2 py-4">
+          {passesQuery.isLoading
+            ? "Calculating passes"
+            : passesQuery.isError
+              ? "Error while calculating"
+              : passesQuery.data
+                ? passesQuery.data.map((dayPass, index) => (
+                    <DayPasses dayPasses={dayPass} key={index} />
+                  ))
+                : ""}
+        </div>
       </div>
     </div>
   );
@@ -135,9 +143,9 @@ function DayPasses({ dayPasses }: { dayPasses: DayPass }) {
 
 function Pass({ pass }: { pass: Pass }) {
   return (
-    <div className="flex gap-2 rounded-md border-2 px-3 py-4">
+    <div className="focus-within:border-primary flex gap-2 rounded-md border-2 px-3 py-4">
       <div className="flex flex-col">
-        <span>ISS</span>
+        <span>{pass.objectName}</span>
         <span>{pass.magnitude}</span>
       </div>
       <div className="ml-auto flex flex-col">
@@ -153,6 +161,11 @@ function Pass({ pass }: { pass: Pass }) {
           {degreesToDirection(pass.endDirection)} (
           {Math.floor(pass.endDirection)}°)
         </span>
+      </div>
+      <div className="flex items-center">
+        <Button variant="ghost">
+          <Info />
+        </Button>
       </div>
     </div>
   );

@@ -23,7 +23,8 @@ export default function App() {
   return (
     <div className="h-svh">
       <Navbar satellite={satellite} setSatellite={setSatellite} />
-      <div className="grid w-full gap-4 overflow-y-auto p-4 lg:h-[calc(100%_-_4rem)] lg:grid-cols-[24rem_minmax(0,55rem)] lg:items-start lg:justify-center">
+      {/* removed 1rem of gap from the width (total max width width 80rem) */}
+      <div className="grid w-full gap-4 overflow-y-auto p-4 lg:h-[calc(100%_-_4rem)] lg:grid-cols-[32rem_minmax(0,47rem)] lg:items-start lg:justify-center">
         <SatelliteInfo location={location} satellite={satellite} />
         <PassesSection
           location={location}

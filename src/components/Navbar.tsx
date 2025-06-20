@@ -15,7 +15,7 @@ export default function Navbar({
   setSatellite: (value: Satellite) => void;
 }) {
   return (
-    <nav className="bg-card sticky top-0 col-span-full h-16 px-2">
+    <nav className="bg-card sticky top-0 z-30 col-span-full h-16 px-2">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between">
         <div className="flex flex-col items-center opacity-75">
           <span className="text-xl">Look at that!</span>
