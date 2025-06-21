@@ -69,6 +69,7 @@ export interface ObserverLocation {
 
 // visibility samples for testing
 export interface Pass {
+  id: string;
   objectName: string;
   startingTime: string;
   endingTime: string;

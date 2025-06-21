@@ -4,6 +4,7 @@ import { useTleQuery } from "@/hooks/useTleQuery";
 import type { Satellite } from "@/lib/const";
 import { DAY, SECOND } from "@/lib/core/helpers/utils";
 import type { ObserverLocation, Pass, Tle } from "@/lib/core/types";
+import { cn, degreesToDirection } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { Info } from "lucide-react";
 import { Button } from "./ui/button";
@@ -12,10 +13,14 @@ export default function PassesSection({
   location,
   setLocation,
   satellite,
+  selectedPass,
+  setSelectedPass,
 }: {
   location: ObserverLocation | null;
   setLocation: (value: ObserverLocation | null) => void;
   satellite: Satellite;
+  selectedPass: Pass | null;
+  setSelectedPass: React.Dispatch<React.SetStateAction<Pass | null>>;
 }) {
   const tleQuery = useTleQuery(satellite.noradId);
   return (
@@ -33,6 +38,8 @@ export default function PassesSection({
             setLocation={setLocation}
             tle={tleQuery.data}
             satellite={satellite}
+            selectedPass={selectedPass}
+            setSelectedPass={setSelectedPass}
           />
         )
       )}
@@ -47,11 +54,15 @@ function Passes({
   setLocation,
   tle,
   satellite,
+  selectedPass,
+  setSelectedPass,
 }: {
   location: ObserverLocation | null;
   setLocation: (value: ObserverLocation | null) => void;
   tle: Tle;
   satellite: Satellite;
+  selectedPass: Pass | null;
+  setSelectedPass: React.Dispatch<React.SetStateAction<Pass | null>>;
 }) {
   const { api, isReady } = useCoreWorker();
 
@@ -105,7 +116,12 @@ function Passes({
 
   return (
     <div>
-      <div className="flex items-center justify-between border-b-2 pb-2">
+      <div
+        className="flex items-center justify-between"
+        onKeyDown={(e) => {
+          console.log(e.key);
+        }}
+      >
         <span className="text-xl">{satellite.longName}</span>
         <Button variant="secondary" onClick={() => setLocation(null)}>
           Reset Location
@@ -119,7 +135,12 @@ function Passes({
               ? "Error while calculating"
               : passesQuery.data
                 ? passesQuery.data.map((dayPass, index) => (
-                    <DayPasses dayPasses={dayPass} key={index} />
+                    <DayPasses
+                      dayPasses={dayPass}
+                      key={index}
+                      selectedPass={selectedPass}
+                      setSelectedPass={setSelectedPass}
+                    />
                   ))
                 : ""}
         </div>
@@ -128,22 +149,47 @@ function Passes({
   );
 }
 
-function DayPasses({ dayPasses }: { dayPasses: DayPass }) {
+function DayPasses({
+  dayPasses,
+  selectedPass,
+  setSelectedPass,
+}: {
+  dayPasses: DayPass;
+  selectedPass: Pass | null;
+  setSelectedPass: React.Dispatch<React.SetStateAction<Pass | null>>;
+}) {
   return (
     <div>
       <div className="p-1 text-sm">{dayPasses.date}</div>
       <div className="space-y-2">
         {dayPasses.passes.map((pass, index) => (
-          <Pass pass={pass} key={index} />
+          <Pass
+            pass={pass}
+            key={index}
+            selectedPass={selectedPass}
+            setSelectedPass={setSelectedPass}
+          />
         ))}
       </div>
     </div>
   );
 }
 
-function Pass({ pass }: { pass: Pass }) {
+function Pass({
+  pass,
+  selectedPass,
+  setSelectedPass,
+}: {
+  pass: Pass;
+  selectedPass: Pass | null;
+  setSelectedPass: React.Dispatch<React.SetStateAction<Pass | null>>;
+}) {
   return (
-    <div className="focus-within:border-primary flex gap-2 rounded-md border-2 px-3 py-4">
+    <div
+      className={cn("flex gap-2 rounded-md border-2 px-3 py-4", {
+        "border-primary": selectedPass != null && selectedPass.id === pass.id,
+      })}
+    >
       <div className="flex flex-col">
         <span>{pass.objectName}</span>
         <span>{pass.magnitude}</span>
@@ -163,40 +209,10 @@ function Pass({ pass }: { pass: Pass }) {
         </span>
       </div>
       <div className="flex items-center">
-        <Button variant="ghost">
+        <Button variant="ghost" onClick={() => setSelectedPass(pass)}>
           <Info />
         </Button>
       </div>
     </div>
   );
-}
-
-function degreesToDirection(degrees: number) {
-  // Normalize degrees to the range [0, 360)
-  const normalized = ((degrees % 360) + 360) % 360;
-
-  // clockwise order
-  const directions = [
-    "N",
-    "NNE",
-    "NE",
-    "ENE",
-    "E",
-    "ESE",
-    "SE",
-    "SSE",
-    "S",
-    "SSW",
-    "SW",
-    "WSW",
-    "W",
-    "WNW",
-    "NW",
-    "NNW",
-  ];
-
-  // Calculate index (16 points = 22.5° per segment)
-  const index = Math.round(normalized / 22.5) % 16;
-
-  return directions[index];
 }
