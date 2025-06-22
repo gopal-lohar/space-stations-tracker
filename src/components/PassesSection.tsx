@@ -7,6 +7,7 @@ import type { ObserverLocation, Pass, Tle } from "@/lib/core/types";
 import { cn, degreesToDirection } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { Info } from "lucide-react";
+import { QueryHandler } from "./QueryHandler";
 import { Button } from "./ui/button";
 
 export default function PassesSection({
@@ -75,40 +76,50 @@ function Passes({
     queryKey: ["passes", location, satellite, tle],
     queryFn: async () => {
       if (location) {
-        const data = await api!.computePasses({
-          tle,
-          startTime,
-          endTime,
-          delta,
-          observerLocation: location,
-          objectName: `${satellite.shortName} (${satellite.module})`,
-        });
-
-        const passes: DayPass[] = [];
-        let dayPass: DayPass | null = null;
-        for (const pass of data) {
-          const date = new Date(pass.startingTime).toLocaleDateString();
-          if (dayPass === null) {
-            dayPass = {
-              date,
-              passes: [pass],
-            };
+        if (!api) {
+          if (isReady) {
+            throw new Error("Something went wrong when loading worker thread");
           } else {
-            if (date === dayPass.date) {
-              dayPass.passes.push(pass);
-            } else {
-              passes.push(dayPass);
+            throw new Error("Worker thread not loaded yet");
+          }
+        } else {
+          const data = await api!.computePasses({
+            tle,
+            startTime,
+            endTime,
+            delta,
+            observerLocation: location,
+            objectName: `${satellite.shortName} (${satellite.module})`,
+          });
+
+          const passes: DayPass[] = [];
+          let dayPass: DayPass | null = null;
+          for (const pass of data) {
+            const date = new Date(pass.startingTime).toLocaleDateString();
+            if (dayPass === null) {
               dayPass = {
                 date,
                 passes: [pass],
               };
+            } else {
+              if (date === dayPass.date) {
+                dayPass.passes.push(pass);
+              } else {
+                passes.push(dayPass);
+                dayPass = {
+                  date,
+                  passes: [pass],
+                };
+              }
             }
           }
+          if (dayPass !== null) {
+            passes.push(dayPass);
+          }
+          return passes;
         }
-        if (dayPass !== null) {
-          passes.push(dayPass);
-        }
-        return passes;
+      } else {
+        throw new Error("Location not found");
       }
     },
     enabled: isReady && !!location,
@@ -116,12 +127,7 @@ function Passes({
 
   return (
     <div>
-      <div
-        className="flex items-center justify-between"
-        onKeyDown={(e) => {
-          console.log(e.key);
-        }}
-      >
+      <div className="flex items-center justify-between">
         <span className="text-xl">{satellite.longName}</span>
         <Button variant="secondary" onClick={() => setLocation(null)}>
           Reset Location
@@ -129,20 +135,18 @@ function Passes({
       </div>
       <div>
         <div className="space-y-2 py-4">
-          {passesQuery.isLoading
-            ? "Calculating passes"
-            : passesQuery.isError
-              ? "Error while calculating"
-              : passesQuery.data
-                ? passesQuery.data.map((dayPass, index) => (
-                    <DayPasses
-                      dayPasses={dayPass}
-                      key={index}
-                      selectedPass={selectedPass}
-                      setSelectedPass={setSelectedPass}
-                    />
-                  ))
-                : ""}
+          <QueryHandler query={passesQuery}>
+            {(passes) =>
+              passes.map((dayPass, index) => (
+                <DayPasses
+                  dayPasses={dayPass}
+                  key={index}
+                  selectedPass={selectedPass}
+                  setSelectedPass={setSelectedPass}
+                />
+              ))
+            }
+          </QueryHandler>
         </div>
       </div>
     </div>
@@ -186,9 +190,12 @@ function Pass({
 }) {
   return (
     <div
-      className={cn("flex gap-2 rounded-md border-2 px-3 py-4", {
-        "border-primary": selectedPass != null && selectedPass.id === pass.id,
-      })}
+      className={cn(
+        "bg-background/5 flex gap-2 rounded-md border px-3 py-4 backdrop-blur-xs",
+        {
+          "border-primary": selectedPass != null && selectedPass.id === pass.id,
+        }
+      )}
     >
       <div className="flex flex-col">
         <span>{pass.objectName}</span>
@@ -209,7 +216,12 @@ function Pass({
         </span>
       </div>
       <div className="flex items-center">
-        <Button variant="ghost" onClick={() => setSelectedPass(pass)}>
+        <Button
+          className="rounded-full"
+          variant="ghost"
+          size="icon"
+          onClick={() => setSelectedPass(pass)}
+        >
           <Info />
         </Button>
       </div>

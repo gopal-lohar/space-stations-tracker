@@ -7,6 +7,7 @@ import { cn, degreesToDirection } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowUp, Navigation, X } from "lucide-react";
 import type { ReactNode } from "react";
+import { QueryHandler } from "./QueryHandler";
 import { PointOnMap, WorldMap } from "./WorldMap";
 import { Button } from "./ui/button";
 
@@ -28,7 +29,17 @@ export default function SatelliteInfo({
     queryKey: ["state_vector", satellite.noradId],
     queryFn: () => {
       if (tleQuery.data) {
-        return api!.calculateStateVector(new Date(), tleQuery.data);
+        if (!api) {
+          if (isReady) {
+            throw new Error("Something went wrong when loading worker thread");
+          } else {
+            throw new Error("Worker thread not loaded yet");
+          }
+        } else {
+          return api.calculateStateVector(new Date(), tleQuery.data);
+        }
+      } else {
+        throw new Error("No tle data found");
       }
     },
     enabled: isReady && !!tleQuery.data,
@@ -39,11 +50,21 @@ export default function SatelliteInfo({
     queryKey: ["sun_time", location],
     queryFn: () => {
       if (location) {
-        return api!.getSunTimes(
-          location.latitude,
-          location.longitude,
-          new Date()
-        );
+        if (!api) {
+          if (isReady) {
+            throw new Error("Something went wrong when loading worker thread");
+          } else {
+            throw new Error("Worker thread not loaded yet");
+          }
+        } else {
+          return api.getSunTimes(
+            location.latitude,
+            location.longitude,
+            new Date()
+          );
+        }
+      } else {
+        throw new Error("Location not detected");
       }
     },
     enabled: isReady && !!location,
@@ -55,7 +76,7 @@ export default function SatelliteInfo({
   return (
     <div className="lg:sticky lg:top-0 lg:max-h-[calc(100svh-4rem-1rem)] lg:overflow-auto">
       {selectedPass && (
-        <div className="rounded-md border-2 p-4 pt-2">
+        <div className="rounded-md border p-4 pt-2">
           <div className="flex items-center justify-between pb-2">
             <span className="text-lg">{selectedPass.objectName}</span>
             <Button
@@ -101,7 +122,7 @@ export default function SatelliteInfo({
         </div>
       )}
       <div
-        className={cn("mt-0 rounded-md border-2 p-4 transition-[margin]", {
+        className={cn("mt-0 rounded-md border p-4 transition-[margin]", {
           "mt-4": selectedPass != null,
         })}
       >
@@ -130,51 +151,47 @@ export default function SatelliteInfo({
           </WorldMap>
         </div>
         <div className="space-y-4 py-4">
-          {!isReady || !tleQuery.data ? (
-            "Loading Data..."
-          ) : stateVectorQuery.data ? (
-            <div className="grid gap-1">
-              <span className="text-center text-lg">{satellite.longName}</span>
-              <Field title="Latitude">
-                {formatCoord(stateVectorQuery.data.geodetic.position.latitude)}°
-              </Field>
-              <Field title="Longitude">
-                {formatCoord(stateVectorQuery.data.geodetic.position.longitude)}
-                °
-              </Field>
-              <Field title="Altitude">
-                {stateVectorQuery.data.geodetic.position.height.toFixed(2)} km
-              </Field>
-            </div>
-          ) : (
-            "calculating..."
-          )}
-          {location != null &&
-            (sunTimeQuery.isLoading ? (
-              "Calculating Sun Time"
-            ) : sunTimeQuery.error ? (
-              "Error Calculating Sun Time"
-            ) : sunTimeQuery.data ? (
+          <QueryHandler query={stateVectorQuery}>
+            {(data) => (
               <div className="grid gap-1">
-                <Field title="Sunrise">
-                  {new Date(sunTimeQuery.data.sunrise).toLocaleTimeString()}
+                <span className="text-center text-lg">
+                  {satellite.longName}
+                </span>
+                <Field title="Latitude">
+                  {formatCoord(data.geodetic.position.latitude)}°
                 </Field>
-                <div className="flex justify-between gap-2">
-                  <span>Solarnoon</span>
-                  <span className="font-mono">
-                    {new Date(sunTimeQuery.data.solarNoon).toLocaleTimeString()}
-                  </span>
-                </div>
-                <div className="flex justify-between gap-2">
-                  <span>Sunset</span>
-                  <span className="font-mono">
-                    {new Date(sunTimeQuery.data.sunset).toLocaleTimeString()}
-                  </span>
-                </div>
+                <Field title="Longitude">
+                  {formatCoord(data.geodetic.position.longitude)}°
+                </Field>
+                <Field title="Altitude">
+                  {data.geodetic.position.height.toFixed(2)} km
+                </Field>
               </div>
-            ) : (
-              `Error Calculating Sun Time ${sunTimeQuery.error}, loc ${location}`
-            ))}
+            )}
+          </QueryHandler>
+          {location != null && (
+            <QueryHandler query={sunTimeQuery}>
+              {(data) => (
+                <div className="grid gap-1">
+                  <Field title="Sunrise">
+                    {new Date(data.sunrise).toLocaleTimeString()}
+                  </Field>
+                  <div className="flex justify-between gap-2">
+                    <span>Solarnoon</span>
+                    <span className="font-mono">
+                      {new Date(data.solarNoon).toLocaleTimeString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <span>Sunset</span>
+                    <span className="font-mono">
+                      {new Date(data.sunset).toLocaleTimeString()}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </QueryHandler>
+          )}
         </div>
       </div>
     </div>

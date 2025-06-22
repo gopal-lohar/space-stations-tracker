@@ -85,7 +85,7 @@ function calculatePass(
 
   // for the time when the sat is visible
   const currentPass: Pass = {
-    id: crypto.randomUUID(),
+    id: `pass-${Math.random().toString().slice(2)}`,
     objectName,
     startingTime: currentTime.toISOString(),
     endingTime: currentTime.toISOString(),

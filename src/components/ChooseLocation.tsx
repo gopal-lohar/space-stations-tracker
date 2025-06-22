@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import type { ObserverLocation } from "@/lib/core/types";
 import { useCallback, useState } from "react";
+import Loading from "./Loading";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 
@@ -64,10 +65,14 @@ export function ChooseLocation({
   }, [setLocation]);
 
   return (
-    <div className="flex flex-col items-center gap-2 rounded-md border-2 px-4 py-8">
+    <div className="flex flex-col items-center gap-2 rounded-md border px-4 py-8">
       <div className="flex flex-col items-center gap-1">
         <Button disabled={detecting} onClick={detectLocation}>
-          {detecting ? "Fetching..." : "Detect Location"}
+          {detecting ? (
+            <Loading className="text-background size-6" />
+          ) : (
+            "Detect Location"
+          )}
         </Button>
         {error && (
           <div>
