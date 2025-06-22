@@ -6,7 +6,7 @@ import { DAY, SECOND } from "@/lib/core/helpers/utils";
 import type { ObserverLocation, Pass, Tle } from "@/lib/core/types";
 import { cn, degreesToDirection } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
-import { Info } from "lucide-react";
+import { Info, Telescope } from "lucide-react";
 import { QueryHandler } from "./QueryHandler";
 import { Button } from "./ui/button";
 
@@ -199,7 +199,9 @@ function Pass({
     >
       <div className="flex flex-col">
         <span>{pass.objectName}</span>
-        <span>{pass.magnitude}</span>
+        <span className="flex items-center gap-1">
+          <Telescope className="size-4" /> {Math.round(pass.maxElevation)}°
+        </span>
       </div>
       <div className="ml-auto flex flex-col">
         <span>{new Date(pass.startingTime).toLocaleTimeString()}</span>
