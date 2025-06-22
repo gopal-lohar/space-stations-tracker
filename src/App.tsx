@@ -10,6 +10,7 @@ import {
 } from "@/lib/const";
 import type { ObserverLocation, Pass } from "@/lib/core/types";
 import { useState } from "react";
+import StarfieldBackground from "./components/StarfieldBackground";
 
 export default function App() {
   const [satellite, setSatellite] = useLocalStorage<Satellite>(
@@ -41,6 +42,7 @@ export default function App() {
           setSelectedPass={setSelectedPass}
         />
       </div>
+      <StarfieldBackground />
     </div>
   );
 }
