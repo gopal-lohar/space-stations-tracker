@@ -223,8 +223,11 @@ function Pass({
           variant="ghost"
           size="icon"
           onClick={() => setSelectedPass(pass)}
+          asChild
         >
-          <Info />
+          <a href="#satelliteInfo">
+            <Info />
+          </a>
         </Button>
       </div>
     </div>

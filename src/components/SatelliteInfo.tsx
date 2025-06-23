@@ -3,7 +3,12 @@ import { useTleQuery } from "@/hooks/useTleQuery";
 import type { Satellite } from "@/lib/const";
 import { calculateLookAngles, type LookAngles } from "@/lib/core";
 import { SECOND } from "@/lib/core/helpers/utils";
-import type { ObserverLocation, Pass } from "@/lib/core/types";
+import type {
+  ObserverLocation,
+  Pass,
+  StateVector,
+  Tle,
+} from "@/lib/core/types";
 import { cn, degreesToDirection } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowUp, Navigation, X } from "lucide-react";
@@ -26,40 +31,6 @@ export default function SatelliteInfo({
   const tleQuery = useTleQuery(satellite.noradId);
 
   const { api, isReady } = useCoreWorker();
-
-  const lookAnglesRangeQuery = useQuery({
-    queryKey: ["look_angles_range", selectedPass],
-    queryFn: () => {
-      if (selectedPass && tleQuery.data && location) {
-        if (!api) {
-          if (isReady) {
-            throw new Error("Something went wrong when loading worker thread");
-          } else {
-            throw new Error("Worker thread not loaded yet");
-          }
-        } else {
-          return api.calculateLookAnglesRange(
-            location,
-            tleQuery.data,
-            new Date(selectedPass.startingTime),
-            new Date(selectedPass.endingTime),
-            5
-          );
-        }
-      } else {
-        if (!selectedPass) {
-          throw new Error("No pass selected");
-        } else if (!location) {
-          throw new Error("No location selected");
-        } else if (!tleQuery.data) {
-          throw new Error("No Tle");
-        } else {
-          throw new Error("Something went wrong");
-        }
-      }
-    },
-    enabled: isReady && !!selectedPass && !!location && !!tleQuery.data,
-  });
 
   const stateVectorQuery = useQuery({
     queryKey: ["state_vector", satellite.noradId],
@@ -110,70 +81,20 @@ export default function SatelliteInfo({
     val >= 0 ? `+${val.toFixed(4)}` : val.toFixed(4);
 
   return (
-    <div className="lg:sticky lg:top-0 lg:max-h-[calc(100svh-4rem-1rem)] lg:overflow-auto">
-      {selectedPass && (
-        <div className="rounded-md border p-4 pt-2">
-          <div className="flex items-center justify-between pb-2">
-            <span className="text-lg">{selectedPass.objectName}</span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="rounded-full"
-              onClick={() => setSelectedPass(null)}
-            >
-              <X />
-            </Button>
-          </div>
-          {lookAnglesRangeQuery.data && (
-            <ISSTracker
-              data={lookAnglesRangeQuery.data}
-              currentPosition={
-                stateVectorQuery.data && location
-                  ? {
-                      ...calculateLookAngles(stateVectorQuery.data, location)
-                        .lookAnglesInDegrees,
-                      isVisible:
-                        new Date().getTime() >=
-                          new Date(selectedPass.startingTime).getTime() &&
-                        new Date().getTime() <=
-                          new Date(selectedPass.endingTime).getTime(),
-                    }
-                  : null
-              }
-            />
-          )}
-          <div className="grid gap-2">
-            <Field title="Date">
-              {new Date(selectedPass.startingTime).toLocaleDateString()}
-            </Field>
-            <Field title="Start Time">
-              {new Date(selectedPass.startingTime).toLocaleTimeString()}
-            </Field>
-            <Field title="End Time">
-              {new Date(selectedPass.endingTime).toLocaleTimeString()}
-            </Field>
-            <Field title="Start Direction">
-              <DegreesToDirectionIcon degrees={selectedPass.startDirection} />
-              {degreesToDirection(selectedPass.startDirection)} (
-              {Math.floor(selectedPass.startDirection)})°
-            </Field>
-            <Field title="End Direction">
-              <DegreesToDirectionIcon degrees={selectedPass.endDirection} />
-              {degreesToDirection(selectedPass.endDirection)} (
-              {Math.floor(selectedPass.endDirection)})°
-            </Field>
-            <Field title="Start Elevation">
-              {selectedPass.startElevation.toFixed(1)}°
-            </Field>
-            <Field title="End Elevation">
-              {selectedPass.endElevation.toFixed(1)}°
-            </Field>
-            <Field title="Max Elevation">
-              {selectedPass.maxElevation.toFixed(1)}°
-            </Field>
-            <Field title="Magnitude">{selectedPass.magnitude}</Field>
-          </div>
-        </div>
+    <div
+      className="lg:sticky lg:top-0 lg:max-h-[calc(100svh-4rem-1rem)] lg:overflow-auto"
+      id="satelliteInfo"
+    >
+      {selectedPass && location && tleQuery.data && stateVectorQuery.data ? (
+        <SelectedPass
+          selectedPass={selectedPass}
+          setSelectedPass={setSelectedPass}
+          location={location}
+          tle={tleQuery.data}
+          stateVector={stateVectorQuery.data}
+        />
+      ) : (
+        ""
       )}
       <div
         className={cn("mt-0 rounded-md border p-4 transition-[margin]", {
@@ -259,6 +180,102 @@ function Field({ title, children }: { title: string; children?: ReactNode }) {
   );
 }
 
+function SelectedPass({
+  selectedPass,
+  setSelectedPass,
+  location,
+  tle,
+  stateVector,
+}: {
+  selectedPass: Pass;
+  setSelectedPass: React.Dispatch<React.SetStateAction<Pass | null>>;
+  location: ObserverLocation;
+  tle: Tle;
+  stateVector: StateVector;
+}) {
+  const { api, isReady } = useCoreWorker();
+
+  const lookAnglesRangeQuery = useQuery({
+    queryKey: ["look_angles_range", selectedPass],
+    queryFn: () => {
+      if (!api) {
+        if (isReady) {
+          throw new Error("Something went wrong when loading worker thread");
+        } else {
+          throw new Error("Worker thread not loaded yet");
+        }
+      } else {
+        return api.calculateLookAnglesRange(
+          location,
+          tle,
+          new Date(selectedPass.startingTime),
+          new Date(selectedPass.endingTime),
+          5
+        );
+      }
+    },
+    enabled: isReady,
+  });
+  return (
+    <div className="rounded-md border p-4 pt-2">
+      <div className="flex items-center justify-between pb-2">
+        <span className="text-lg">{selectedPass.objectName}</span>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="rounded-full"
+          onClick={() => setSelectedPass(null)}
+        >
+          <X />
+        </Button>
+      </div>
+
+      <SkyMap
+        lookAnglesRange={lookAnglesRangeQuery.data}
+        currentPosition={{
+          ...calculateLookAngles(stateVector, location).lookAnglesInDegrees,
+          isVisible:
+            new Date().getTime() >=
+              new Date(selectedPass.startingTime).getTime() &&
+            new Date().getTime() <= new Date(selectedPass.endingTime).getTime(),
+        }}
+      />
+
+      <div className="grid gap-2">
+        <Field title="Date">
+          {new Date(selectedPass.startingTime).toLocaleDateString()}
+        </Field>
+        <Field title="Start Time">
+          {new Date(selectedPass.startingTime).toLocaleTimeString()}
+        </Field>
+        <Field title="End Time">
+          {new Date(selectedPass.endingTime).toLocaleTimeString()}
+        </Field>
+        <Field title="Start Direction">
+          <DegreesToDirectionIcon degrees={selectedPass.startDirection} />
+          {degreesToDirection(selectedPass.startDirection)} (
+          {Math.floor(selectedPass.startDirection)})°
+        </Field>
+        <Field title="End Direction">
+          <DegreesToDirectionIcon degrees={selectedPass.endDirection} />
+          {degreesToDirection(selectedPass.endDirection)} (
+          {Math.floor(selectedPass.endDirection)})°
+        </Field>
+        <Field title="Start Elevation">
+          {selectedPass.startElevation.toFixed(1)}°
+        </Field>
+        <Field title="End Elevation">
+          {selectedPass.endElevation.toFixed(1)}°
+        </Field>
+        <Field title="Max Elevation">
+          {selectedPass.maxElevation.toFixed(1)}°
+        </Field>
+        <Field title="Magnitude">{selectedPass.magnitude}</Field>
+      </div>
+    </div>
+  );
+}
+
 function DegreesToDirectionIcon({
   degrees,
   ...props
@@ -289,80 +306,18 @@ interface LookAngle {
   time: Date;
 }
 
-interface ISSTrackerProps {
-  data: LookAngle[];
+function SkyMap({
+  lookAnglesRange,
+  currentPosition = null,
+}: {
+  lookAnglesRange: LookAngle[] | undefined;
   currentPosition?: {
     azimuth: number;
     elevation: number;
     isVisible: boolean;
   } | null;
-}
-
-const ISSTracker: React.FC<ISSTrackerProps> = ({
-  data,
-  currentPosition = null,
-}) => {
+}) {
   // Convert azimuth/elevation to x,y coordinates on the sky dome
-  const skyToCartesian = (
-    azimuth: number,
-    elevation: number,
-    radius: number = 200
-  ) => {
-    const azRad = (azimuth * Math.PI) / 180;
-    // const elRad = (elevation * Math.PI) / 180;
-
-    // Project onto 2D circle (0° elevation = edge, 90° elevation = center)
-    const projRadius = radius * (1 - elevation / 90);
-
-    // Azimuth: 0° = North (top), 90° = East (right), 180° = South (bottom), 270° = West (left)
-    const x = projRadius * Math.sin(azRad);
-    const y = -projRadius * Math.cos(azRad);
-
-    return { x, y };
-  };
-
-  // Generate smooth curved path using cubic Bezier curves
-  const generateSmoothPath = () => {
-    const visibleData = data.filter(
-      (d) => d.lookAngles.isSatelliteAboveHorizon
-    );
-    if (visibleData.length < 2) return "";
-
-    const points = visibleData.map((point) => {
-      const { x, y } = skyToCartesian(
-        point.lookAngles.lookAnglesInDegrees.azimuth,
-        point.lookAngles.lookAnglesInDegrees.elevation
-      );
-      return { x: 250 + x, y: 250 + y };
-    });
-
-    let pathData = `M ${points[0].x} ${points[0].y}`;
-
-    // Create smooth curves between points
-    for (let i = 1; i < points.length; i++) {
-      if (i === 1) {
-        // First curve - use quadratic
-        const midX = (points[0].x + points[1].x) / 2;
-        const midY = (points[0].y + points[1].y) / 2;
-        pathData += ` Q ${midX} ${midY} ${points[1].x} ${points[1].y}`;
-      } else {
-        // Use cubic Bezier for smooth transitions
-        const prev = points[i - 2];
-        const curr = points[i - 1];
-        const next = points[i];
-
-        // Calculate control points for smooth curve
-        const cp1x = curr.x + (next.x - prev.x) * 0.15;
-        const cp1y = curr.y + (next.y - prev.y) * 0.15;
-        const cp2x = next.x - (next.x - curr.x) * 0.15;
-        const cp2y = next.y - (next.y - curr.y) * 0.15;
-
-        pathData += ` C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${next.x} ${next.y}`;
-      }
-    }
-
-    return pathData;
-  };
 
   // Get current ISS position if provided
   const getCurrentISSPosition = () => {
@@ -480,16 +435,12 @@ const ISSTracker: React.FC<ISSTrackerProps> = ({
           0°
         </text>
 
-        {/* Smooth ISS Path */}
-        <path
-          d={generateSmoothPath()}
-          fill="none"
-          stroke="#ffd700"
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          opacity="0.8"
-        />
+        {/* Smooth Satellite Path */}
+        {lookAnglesRange ? (
+          <SatellitePathInSky lookAnglesRange={lookAnglesRange} />
+        ) : (
+          ""
+        )}
 
         {/* Current ISS Position (independent of path) */}
         {currentISSPos && (
@@ -530,4 +481,81 @@ const ISSTracker: React.FC<ISSTrackerProps> = ({
       </svg>
     </div>
   );
-};
+}
+
+function SatellitePathInSky({
+  lookAnglesRange,
+}: {
+  lookAnglesRange: LookAngle[];
+}) {
+  const generateSmoothPath = (data: LookAngle[]) => {
+    const visibleData = data.filter(
+      (d) => d.lookAngles.isSatelliteAboveHorizon
+    );
+    if (visibleData.length < 2) return "";
+
+    const points = visibleData.map((point) => {
+      const { x, y } = skyToCartesian(
+        point.lookAngles.lookAnglesInDegrees.azimuth,
+        point.lookAngles.lookAnglesInDegrees.elevation
+      );
+      return { x: 250 + x, y: 250 + y };
+    });
+
+    let pathData = `M ${points[0].x} ${points[0].y}`;
+
+    // Create smooth curves between points
+    for (let i = 1; i < points.length; i++) {
+      if (i === 1) {
+        // First curve - use quadratic
+        const midX = (points[0].x + points[1].x) / 2;
+        const midY = (points[0].y + points[1].y) / 2;
+        pathData += ` Q ${midX} ${midY} ${points[1].x} ${points[1].y}`;
+      } else {
+        // Use cubic Bezier for smooth transitions
+        const prev = points[i - 2];
+        const curr = points[i - 1];
+        const next = points[i];
+
+        // Calculate control points for smooth curve
+        const cp1x = curr.x + (next.x - prev.x) * 0.15;
+        const cp1y = curr.y + (next.y - prev.y) * 0.15;
+        const cp2x = next.x - (next.x - curr.x) * 0.15;
+        const cp2y = next.y - (next.y - curr.y) * 0.15;
+
+        pathData += ` C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${next.x} ${next.y}`;
+      }
+    }
+
+    return pathData;
+  };
+  return (
+    <path
+      d={generateSmoothPath(lookAnglesRange)}
+      fill="none"
+      stroke="#ffd700"
+      strokeWidth="3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      opacity="0.8"
+    />
+  );
+}
+
+function skyToCartesian(
+  azimuth: number,
+  elevation: number,
+  radius: number = 200
+) {
+  const azRad = (azimuth * Math.PI) / 180;
+  // const elRad = (elevation * Math.PI) / 180;
+
+  // Project onto 2D circle (0° elevation = edge, 90° elevation = center)
+  const projRadius = radius * (1 - elevation / 90);
+
+  // Azimuth: 0° = North (top), 90° = East (right), 180° = South (bottom), 270° = West (left)
+  const x = projRadius * Math.sin(azRad);
+  const y = -projRadius * Math.cos(azRad);
+
+  return { x, y };
+}
