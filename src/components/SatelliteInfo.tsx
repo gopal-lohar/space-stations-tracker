@@ -9,7 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowUp, Navigation, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { QueryHandler } from "./QueryHandler";
-import { PointOnMap, WorldMap } from "./WorldMap";
+import { PointOnMap, PulsingPointOnMap, WorldMap } from "./WorldMap";
 import { Button } from "./ui/button";
 
 export default function SatelliteInfo({
@@ -193,12 +193,10 @@ export default function SatelliteInfo({
               />
             )}
             {stateVectorQuery.data && (
-              <PointOnMap
+              <PulsingPointOnMap
                 point={{
                   latitude: stateVectorQuery.data.geodetic.position.latitude,
                   longitude: stateVectorQuery.data.geodetic.position.longitude,
-                  label: satellite.shortName,
-                  color: "red",
                 }}
               />
             )}

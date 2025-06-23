@@ -5,6 +5,55 @@ interface WorldMapProps {
   children?: ReactNode;
 }
 
+export function PulsingPointOnMap({
+  point,
+}: {
+  point: { latitude: number; longitude: number };
+}) {
+  // NOTE: these conversions are based on svgWidth
+  const longitudeToX = (lng: number) => (lng + 180) * (5760 / 360);
+  const latitudeToY = (lat: number) => (90 - lat) * (2880 / 180);
+
+  const x = longitudeToX(point.longitude);
+  const y = latitudeToY(point.latitude);
+
+  return (
+    <g>
+      <circle
+        cx={x}
+        cy={y}
+        r="50"
+        fill="#ff4444"
+        stroke="white"
+        strokeWidth="10"
+      />
+      {/* Pulsing animation around current position */}
+      <circle
+        cx={x}
+        cy={y}
+        r="100"
+        fill="none"
+        stroke="#ff4444"
+        strokeWidth="20"
+        opacity="0.6"
+      >
+        <animate
+          attributeName="r"
+          values="100;200;100"
+          dur="2s"
+          repeatCount="indefinite"
+        />
+        <animate
+          attributeName="opacity"
+          values="0.6;0.1;0.6"
+          dur="2s"
+          repeatCount="indefinite"
+        />
+      </circle>
+    </g>
+  );
+}
+
 export function PointOnMap({
   point,
 }: {
