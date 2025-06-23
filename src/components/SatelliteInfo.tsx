@@ -1,6 +1,7 @@
 import { useCoreWorker } from "@/hooks/useCoreWorker";
 import { useTleQuery } from "@/hooks/useTleQuery";
 import type { Satellite } from "@/lib/const";
+import { calculateLookAngles, type LookAngles } from "@/lib/core";
 import { SECOND } from "@/lib/core/helpers/utils";
 import type { ObserverLocation, Pass } from "@/lib/core/types";
 import { cn, degreesToDirection } from "@/lib/utils";
@@ -25,6 +26,41 @@ export default function SatelliteInfo({
   const tleQuery = useTleQuery(satellite.noradId);
 
   const { api, isReady } = useCoreWorker();
+
+  const lookAnglesRangeQuery = useQuery({
+    queryKey: ["look_angles_range", selectedPass],
+    queryFn: () => {
+      if (selectedPass && tleQuery.data && location) {
+        if (!api) {
+          if (isReady) {
+            throw new Error("Something went wrong when loading worker thread");
+          } else {
+            throw new Error("Worker thread not loaded yet");
+          }
+        } else {
+          return api.calculateLookAnglesRange(
+            location,
+            tleQuery.data,
+            new Date(selectedPass.startingTime),
+            new Date(selectedPass.endingTime),
+            5
+          );
+        }
+      } else {
+        if (!selectedPass) {
+          throw new Error("No pass selected");
+        } else if (!location) {
+          throw new Error("No location selected");
+        } else if (!tleQuery.data) {
+          throw new Error("No Tle");
+        } else {
+          throw new Error("Something went wrong");
+        }
+      }
+    },
+    enabled: isReady && !!selectedPass && !!location && !!tleQuery.data,
+  });
+
   const stateVectorQuery = useQuery({
     queryKey: ["state_vector", satellite.noradId],
     queryFn: () => {
@@ -88,6 +124,24 @@ export default function SatelliteInfo({
               <X />
             </Button>
           </div>
+          {lookAnglesRangeQuery.data && (
+            <ISSTracker
+              data={lookAnglesRangeQuery.data}
+              currentPosition={
+                stateVectorQuery.data && location
+                  ? {
+                      ...calculateLookAngles(stateVectorQuery.data, location)
+                        .lookAnglesInDegrees,
+                      isVisible:
+                        new Date().getTime() >=
+                          new Date(selectedPass.startingTime).getTime() &&
+                        new Date().getTime() <=
+                          new Date(selectedPass.endingTime).getTime(),
+                    }
+                  : null
+              }
+            />
+          )}
           <div className="grid gap-2">
             <Field title="Date">
               {new Date(selectedPass.startingTime).toLocaleDateString()}
@@ -231,3 +285,251 @@ function DegreesToDirectionIcon({
     />
   );
 }
+
+interface LookAngle {
+  lookAngles: LookAngles;
+  time: Date;
+}
+
+interface ISSTrackerProps {
+  data: LookAngle[];
+  currentPosition?: {
+    azimuth: number;
+    elevation: number;
+    isVisible: boolean;
+  } | null;
+}
+
+const ISSTracker: React.FC<ISSTrackerProps> = ({
+  data,
+  currentPosition = null,
+}) => {
+  // Convert azimuth/elevation to x,y coordinates on the sky dome
+  const skyToCartesian = (
+    azimuth: number,
+    elevation: number,
+    radius: number = 200
+  ) => {
+    const azRad = (azimuth * Math.PI) / 180;
+    // const elRad = (elevation * Math.PI) / 180;
+
+    // Project onto 2D circle (0° elevation = edge, 90° elevation = center)
+    const projRadius = radius * (1 - elevation / 90);
+
+    // Azimuth: 0° = North (top), 90° = East (right), 180° = South (bottom), 270° = West (left)
+    const x = projRadius * Math.sin(azRad);
+    const y = -projRadius * Math.cos(azRad);
+
+    return { x, y };
+  };
+
+  // Generate smooth curved path using cubic Bezier curves
+  const generateSmoothPath = () => {
+    const visibleData = data.filter(
+      (d) => d.lookAngles.isSatelliteAboveHorizon
+    );
+    if (visibleData.length < 2) return "";
+
+    const points = visibleData.map((point) => {
+      const { x, y } = skyToCartesian(
+        point.lookAngles.lookAnglesInDegrees.azimuth,
+        point.lookAngles.lookAnglesInDegrees.elevation
+      );
+      return { x: 250 + x, y: 250 + y };
+    });
+
+    let pathData = `M ${points[0].x} ${points[0].y}`;
+
+    // Create smooth curves between points
+    for (let i = 1; i < points.length; i++) {
+      if (i === 1) {
+        // First curve - use quadratic
+        const midX = (points[0].x + points[1].x) / 2;
+        const midY = (points[0].y + points[1].y) / 2;
+        pathData += ` Q ${midX} ${midY} ${points[1].x} ${points[1].y}`;
+      } else {
+        // Use cubic Bezier for smooth transitions
+        const prev = points[i - 2];
+        const curr = points[i - 1];
+        const next = points[i];
+
+        // Calculate control points for smooth curve
+        const cp1x = curr.x + (next.x - prev.x) * 0.15;
+        const cp1y = curr.y + (next.y - prev.y) * 0.15;
+        const cp2x = next.x - (next.x - curr.x) * 0.15;
+        const cp2y = next.y - (next.y - curr.y) * 0.15;
+
+        pathData += ` C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${next.x} ${next.y}`;
+      }
+    }
+
+    return pathData;
+  };
+
+  // Get current ISS position if provided
+  const getCurrentISSPosition = () => {
+    if (!currentPosition || !currentPosition.isVisible) return null;
+
+    const { x, y } = skyToCartesian(
+      currentPosition.azimuth,
+      currentPosition.elevation
+    );
+    return { x: 250 + x, y: 250 + y };
+  };
+
+  const currentISSPos = getCurrentISSPosition();
+
+  return (
+    <div className="flex justify-center p-4">
+      <svg
+        viewBox="0 0 500 500"
+        width="100%"
+        height="100%"
+        className="bg-background/5 rounded-full border border-gray-600 backdrop-blur-sm"
+      >
+        {/* Horizon circle */}
+        <circle
+          cx="250"
+          cy="250"
+          r="200"
+          fill="none"
+          stroke="#4a5568"
+          strokeWidth="2"
+        />
+
+        {/* Elevation circles */}
+        <circle
+          cx="250"
+          cy="250"
+          r="150"
+          fill="none"
+          stroke="#4a5568"
+          strokeWidth="1"
+          opacity="0.3"
+        />
+        <circle
+          cx="250"
+          cy="250"
+          r="100"
+          fill="none"
+          stroke="#4a5568"
+          strokeWidth="1"
+          opacity="0.3"
+        />
+        <circle
+          cx="250"
+          cy="250"
+          r="50"
+          fill="none"
+          stroke="#4a5568"
+          strokeWidth="1"
+          opacity="0.3"
+        />
+
+        {/* Cardinal directions */}
+        <text
+          x="250"
+          y="40"
+          textAnchor="middle"
+          fill="white"
+          fontSize="14"
+          fontWeight="bold"
+        >
+          N
+        </text>
+        <text
+          x="460"
+          y="255"
+          textAnchor="middle"
+          fill="white"
+          fontSize="14"
+          fontWeight="bold"
+        >
+          E
+        </text>
+        <text
+          x="250"
+          y="470"
+          textAnchor="middle"
+          fill="white"
+          fontSize="14"
+          fontWeight="bold"
+        >
+          S
+        </text>
+        <text
+          x="40"
+          y="255"
+          textAnchor="middle"
+          fill="white"
+          fontSize="14"
+          fontWeight="bold"
+        >
+          W
+        </text>
+
+        {/* Elevation labels */}
+        <text x="270" y="255" fill="white" fontSize="10" opacity="0.7">
+          90°
+        </text>
+        <text x="320" y="255" fill="white" fontSize="10" opacity="0.7">
+          60°
+        </text>
+        <text x="370" y="255" fill="white" fontSize="10" opacity="0.7">
+          30°
+        </text>
+        <text x="420" y="255" fill="white" fontSize="10" opacity="0.7">
+          0°
+        </text>
+
+        {/* Smooth ISS Path */}
+        <path
+          d={generateSmoothPath()}
+          fill="none"
+          stroke="#ffd700"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          opacity="0.8"
+        />
+
+        {/* Current ISS Position (independent of path) */}
+        {currentISSPos && (
+          <g>
+            <circle
+              cx={currentISSPos.x}
+              cy={currentISSPos.y}
+              r="8"
+              fill="#ff4444"
+              stroke="white"
+              strokeWidth="2"
+            />
+            {/* Pulsing animation around current position */}
+            <circle
+              cx={currentISSPos.x}
+              cy={currentISSPos.y}
+              r="15"
+              fill="none"
+              stroke="#ff4444"
+              strokeWidth="2"
+              opacity="0.6"
+            >
+              <animate
+                attributeName="r"
+                values="15;25;15"
+                dur="2s"
+                repeatCount="indefinite"
+              />
+              <animate
+                attributeName="opacity"
+                values="0.6;0.1;0.6"
+                dur="2s"
+                repeatCount="indefinite"
+              />
+            </circle>
+          </g>
+        )}
+      </svg>
+    </div>
+  );
+};

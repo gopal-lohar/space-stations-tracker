@@ -72,7 +72,7 @@ export function calculateStateVectorRange(
     return data;
   }
 
-  while (currentTime <= endTime) {
+  while (currentTime < endTime) {
     const stateVector = calculateStateVector(currentTime, tle);
     if (typeof stateVector !== "string") {
       data.stateVectors.push({
@@ -83,6 +83,16 @@ export function calculateStateVectorRange(
       data.errorCount++;
     }
     currentTime.setSeconds(currentTime.getSeconds() + stepSeconds);
+  }
+
+  const stateVector = calculateStateVector(endTime, tle);
+  if (typeof stateVector !== "string") {
+    data.stateVectors.push({
+      time: new Date(currentTime),
+      stateVector,
+    });
+  } else {
+    data.errorCount++;
   }
 
   return data;

@@ -1,5 +1,6 @@
 import * as satellite from "satellite.js";
-import type { ObserverLocation, StateVector } from "../types";
+import type { ObserverLocation, StateVector, Tle } from "../types";
+import { calculateStateVectorRange } from "./calculateStateVector";
 
 function calculateLookAnglesInRadians(
   stateVector: StateVector,
@@ -40,6 +41,12 @@ function calculateLookAnglesInRadians(
 //   return azimuth;
 // }
 
+export type LookAngles = {
+  lookAnglesInDegrees: { azimuth: number; elevation: number };
+  isSatelliteAboveHorizon: boolean;
+  rangeSat: number;
+};
+
 export function calculateLookAngles(
   stateVector: StateVector,
   observerLocation: ObserverLocation
@@ -62,4 +69,25 @@ export function calculateLookAngles(
     isSatelliteAboveHorizon: lookAnglesInDegrees.elevation > 10,
     rangeSat: lookAngles.rangeSat, // in kilometers
   };
+}
+
+export function calculateLookAnglesRange(
+  observerLocation: ObserverLocation,
+  tle: Tle,
+  startTime: Date,
+  endTime: Date,
+  stepSeconds: number = 60
+) {
+  const stateVectorRange = calculateStateVectorRange(
+    tle,
+    startTime,
+    endTime,
+    stepSeconds
+  );
+  const lookAnglesRange = stateVectorRange.stateVectors.map((sv) => ({
+    lookAngles: calculateLookAngles(sv.stateVector, observerLocation),
+    time: sv.time,
+  }));
+
+  return lookAnglesRange;
 }

@@ -2,12 +2,15 @@ import { expose } from "comlink";
 
 import type { StateVector, Tle } from "@/lib/core/index";
 import {
+  calculateLookAnglesRange,
   calculateStateVector,
   computePasses,
   getSunTimes,
 } from "@/lib/core/index";
 
 const coreOperation = {
+  computePasses,
+  calculateLookAnglesRange,
   async calculateStateVector(time: Date, tle: Tle): Promise<StateVector> {
     const res = calculateStateVector(time, tle);
     if (typeof res == "string") {
@@ -16,7 +19,6 @@ const coreOperation = {
       return res;
     }
   },
-  computePasses,
   getSunTimes(latitude: number, longitude: number, date?: Date) {
     const res = getSunTimes(latitude, longitude, date);
     if (typeof res.error == "string") {
