@@ -1,5 +1,6 @@
 import { expose } from "comlink";
 
+import { calculateCurrentOrbitPath } from "@/lib/core/ganit/calculateStateVector";
 import type { StateVector, Tle } from "@/lib/core/index";
 import {
   calculateLookAnglesRange,
@@ -27,6 +28,20 @@ const coreOperation = {
       throw new Error("Couldn't calculate sun times");
     } else {
       return res.data;
+    }
+  },
+
+  calculateCurrentOrbitPath(
+    tle: Tle,
+    time: Date
+  ): { stateVector: StateVector; time: Date }[] {
+    const res = calculateCurrentOrbitPath(tle, time);
+    if (res.error) {
+      throw new Error(res.error);
+    } else if (!res.stateVectors) {
+      throw new Error("Couldn't calculate sun times");
+    } else {
+      return res.stateVectors;
     }
   },
 };

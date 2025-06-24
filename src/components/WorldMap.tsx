@@ -85,6 +85,70 @@ export function PointOnMap({
   );
 }
 
+export function SatellitePath({
+  path,
+}: {
+  path: { latitude: number; longitude: number }[];
+}) {
+  const longitudeToX = (lng: number) => (lng + 180) * (5760 / 360);
+  const latitudeToY = (lat: number) => (90 - lat) * (2880 / 180);
+
+  const points = path.map((point, index) => {
+    if (index === 0) {
+      return {
+        x: longitudeToX(point.longitude - 360),
+        y: latitudeToY(point.latitude),
+      };
+    }
+    if (index === path.length - 1) {
+      return {
+        x: longitudeToX(point.longitude + 360),
+        y: latitudeToY(point.latitude),
+      };
+    }
+    return {
+      x: longitudeToX(point.longitude),
+      y: latitudeToY(point.latitude),
+    };
+  });
+
+  let pathData = `M ${points[0].x} ${points[0].y}`;
+
+  // Create smooth curves between points
+  for (let i = 1; i < points.length; i++) {
+    if (i === 1) {
+      // First curve - use quadratic
+      const midX = (points[0].x + points[1].x) / 2;
+      const midY = (points[0].y + points[1].y) / 2;
+      pathData += ` Q ${midX} ${midY} ${points[1].x} ${points[1].y}`;
+    } else {
+      // Use cubic Bezier for smooth transitions
+      const prev = points[i - 2];
+      const curr = points[i - 1];
+      const next = points[i];
+
+      // Calculate control points for smooth curve
+      const cp1x = curr.x + (next.x - prev.x) * 0.15;
+      const cp1y = curr.y + (next.y - prev.y) * 0.15;
+      const cp2x = next.x - (next.x - curr.x) * 0.15;
+      const cp2y = next.y - (next.y - curr.y) * 0.15;
+
+      pathData += ` C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${next.x} ${next.y}`;
+    }
+  }
+  return (
+    <path
+      d={pathData}
+      fill="none"
+      stroke="#ffd700"
+      strokeWidth="25"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      opacity="0.75"
+    />
+  );
+}
+
 export const WorldMap: React.FC<WorldMapProps> = ({ children }) => {
   return (
     <svg

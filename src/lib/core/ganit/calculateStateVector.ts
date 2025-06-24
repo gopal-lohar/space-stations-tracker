@@ -1,4 +1,5 @@
 import * as satellite from "satellite.js";
+import { HOUR } from "../helpers/utils";
 import type { StateVector, StateVectorRange, Tle } from "../types";
 
 export function calculateStateVector(
@@ -95,5 +96,70 @@ export function calculateStateVectorRange(
     data.errorCount++;
   }
 
+  return data;
+}
+
+/// calculates the current orbit (according to the map) of a satellite and return it (note that idk)
+export function calculateCurrentOrbitPath(
+  tle: Tle,
+  time: Date,
+  stepSeconds: number = 60,
+  maxPeriod: number = HOUR * 2.5
+): StateVectorRange {
+  const data: StateVectorRange = {
+    stateVectors: [],
+    errorCount: 0,
+    error: "",
+  };
+
+  const svForward = [] as { stateVector: StateVector; time: Date }[];
+  const svBackward = [] as { stateVector: StateVector; time: Date }[];
+  let currentTime = new Date(time);
+  let currentStateVector: StateVector | null = null;
+
+  while (
+    (svForward.length > 1 && currentStateVector
+      ? svForward[svForward.length - 2].stateVector.geodetic.position
+          .longitude < currentStateVector.geodetic.position.longitude
+      : true) &&
+    currentTime.getTime() < time.getTime() + maxPeriod
+  ) {
+    const stateVector = calculateStateVector(currentTime, tle);
+    if (typeof stateVector !== "string") {
+      currentStateVector = stateVector;
+      svForward.push({
+        time: new Date(currentTime),
+        stateVector,
+      });
+    } else {
+      data.errorCount++;
+    }
+    currentTime.setSeconds(currentTime.getSeconds() + stepSeconds);
+  }
+
+  currentTime = new Date(time);
+  currentStateVector = null;
+
+  while (
+    (svBackward.length > 1 && currentStateVector
+      ? svBackward[svBackward.length - 2].stateVector.geodetic.position
+          .longitude > currentStateVector.geodetic.position.longitude
+      : true) &&
+    currentTime.getTime() > time.getTime() - maxPeriod
+  ) {
+    const stateVector = calculateStateVector(currentTime, tle);
+    if (typeof stateVector !== "string") {
+      currentStateVector = stateVector;
+      svBackward.push({
+        time: new Date(currentTime),
+        stateVector,
+      });
+    } else {
+      data.errorCount++;
+    }
+    currentTime.setSeconds(currentTime.getSeconds() - stepSeconds);
+  }
+
+  data.stateVectors = svBackward.reverse().concat(svForward.slice(1));
   return data;
 }

@@ -14,7 +14,12 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowUp, Navigation, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { QueryHandler } from "./QueryHandler";
-import { PointOnMap, PulsingPointOnMap, WorldMap } from "./WorldMap";
+import {
+  PointOnMap,
+  PulsingPointOnMap,
+  SatellitePath,
+  WorldMap,
+} from "./WorldMap";
 import { Button } from "./ui/button";
 
 export default function SatelliteInfo({
@@ -77,6 +82,41 @@ export default function SatelliteInfo({
     enabled: isReady && !!location,
   });
 
+  const satellitePathQuery = useQuery({
+    queryKey: ["satellite_path"],
+    queryFn: async () => {
+      if (tleQuery.data) {
+        if (!api) {
+          if (isReady) {
+            throw new Error("Something went wrong when loading worker thread");
+          } else {
+            throw new Error("Worker thread not loaded yet");
+          }
+        } else {
+          const data = await api.calculateCurrentOrbitPath(
+            tleQuery.data,
+            new Date()
+          );
+          if (data.length < 2) {
+            throw new Error("Invalid data");
+          } else {
+            return {
+              startTime: data[0].time,
+              endTime: data[data.length - 1].time,
+              path: data.map((point) => ({
+                latitude: point.stateVector.geodetic.position.latitude,
+                longitude: point.stateVector.geodetic.position.longitude,
+              })),
+            };
+          }
+        }
+      } else {
+        throw new Error("No tle data found");
+      }
+    },
+    enabled: isReady && !!tleQuery.data,
+  });
+
   const formatCoord = (val: number) =>
     val >= 0 ? `+${val.toFixed(4)}` : val.toFixed(4);
 
@@ -101,8 +141,11 @@ export default function SatelliteInfo({
           "mt-4": selectedPass != null,
         })}
       >
-        <div className="relative -m-3 overflow-hidden">
+        <div className="relative -m-4 overflow-hidden">
           <WorldMap>
+            {satellitePathQuery.data && (
+              <SatellitePath path={satellitePathQuery.data.path} />
+            )}
             {location && (
               <PointOnMap
                 point={{
