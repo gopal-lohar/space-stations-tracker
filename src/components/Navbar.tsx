@@ -16,8 +16,8 @@ export default function Navbar({
   setSatellite: (value: Satellite) => void;
 }) {
   return (
-    <nav className="z-30 col-span-full h-16 px-2">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between">
+    <nav className="z-30 col-span-full h-16">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between border-b px-1">
         <div className="flex flex-col items-center">
           <span className="text-xl">Look at that!</span>
           <span className="text-sm">it's a Space Station</span>
@@ -50,7 +50,12 @@ export default function Navbar({
               })}
             </SelectContent>
           </Select>
-          <Button variant="ghost" asChild className="rounded-full opacity-90">
+          <Button
+            variant="ghost"
+            size="icon"
+            asChild
+            className="rounded-full opacity-90"
+          >
             <a
               target="_blank"
               href="https://github.com/gopal-lohar/space-stations-tracker"

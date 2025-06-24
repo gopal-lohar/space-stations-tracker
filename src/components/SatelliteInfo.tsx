@@ -122,7 +122,7 @@ export default function SatelliteInfo({
 
   return (
     <div
-      className="lg:sticky lg:top-0 lg:max-h-[calc(100svh-4rem-1rem)] lg:overflow-auto"
+      className="py-3 lg:sticky lg:top-0 lg:max-h-[calc(100svh-4rem)] lg:overflow-auto"
       id="satelliteInfo"
     >
       {selectedPass && location && tleQuery.data && stateVectorQuery.data ? (

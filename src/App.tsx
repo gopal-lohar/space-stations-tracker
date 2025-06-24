@@ -27,8 +27,8 @@ export default function App() {
     <div className="h-svh">
       <StarfieldBackground />
       <Navbar satellite={satellite} setSatellite={setSatellite} />
-      {/* removed 1rem of gap from the width (total max width width 80rem) */}
-      <div className="grid w-full scroll-p-4 gap-4 overflow-y-auto p-4 lg:h-[calc(100%_-_4rem)] lg:grid-cols-[32rem_minmax(0,47rem)] lg:items-start lg:justify-center">
+      {/* removed 0.75rem of gap from the width (total max width width 80rem) */}
+      <div className="grid w-full gap-3 overflow-y-auto px-1 lg:h-[calc(100%_-_4rem)] lg:grid-cols-[32rem_minmax(0,47.25rem)] lg:items-start lg:justify-center">
         <SatelliteInfo
           location={location}
           satellite={satellite}

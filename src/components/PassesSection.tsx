@@ -126,7 +126,7 @@ function Passes({
   });
 
   return (
-    <div>
+    <div className="py-3">
       <div className="flex items-center justify-between">
         <span className="text-xl">{satellite.longName}</span>
         <Button variant="secondary" onClick={() => setLocation(null)}>
@@ -134,7 +134,7 @@ function Passes({
         </Button>
       </div>
       <div>
-        <div className="space-y-2 py-4">
+        <div className="space-y-2 py-1">
           <QueryHandler query={passesQuery}>
             {(passes) =>
               passes.map((dayPass, index) => (
