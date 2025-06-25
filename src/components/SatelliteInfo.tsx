@@ -12,7 +12,7 @@ import type {
 import { cn, degreesToDirection } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowUp, Navigation, X } from "lucide-react";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { QueryHandler } from "./QueryHandler";
 import {
   PointOnMap,
@@ -83,7 +83,7 @@ export default function SatelliteInfo({
   });
 
   const satellitePathQuery = useQuery({
-    queryKey: ["satellite_path"],
+    queryKey: ["satellite_path", satellite],
     queryFn: async () => {
       if (tleQuery.data) {
         if (!api) {
@@ -116,6 +116,17 @@ export default function SatelliteInfo({
     },
     enabled: isReady && !!tleQuery.data,
   });
+
+  useEffect(() => {
+    const now = Date.now();
+    if (
+      satellitePathQuery.data &&
+      (satellitePathQuery.data.startTime.getTime() > now ||
+        satellitePathQuery.data.endTime.getTime() < now)
+    ) {
+      satellitePathQuery.refetch();
+    }
+  }, [stateVectorQuery.data, satellitePathQuery]);
 
   const formatCoord = (val: number) =>
     val >= 0 ? `+${val.toFixed(4)}` : val.toFixed(4);
