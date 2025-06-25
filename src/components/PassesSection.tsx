@@ -7,6 +7,7 @@ import type { ObserverLocation, Pass, Tle } from "@/lib/core/types";
 import { cn, degreesToDirection } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { Info, Telescope } from "lucide-react";
+import { useEffect } from "react";
 import { QueryHandler } from "./QueryHandler";
 import { Button } from "./ui/button";
 
@@ -124,6 +125,19 @@ function Passes({
     },
     enabled: isReady && !!location,
   });
+
+  useEffect(() => {
+    if (selectedPass) {
+      const passStillExist =
+        passesQuery.data &&
+        passesQuery.data.some((dayPass) =>
+          dayPass.passes.some((pass) => pass.id === selectedPass.id)
+        );
+      if (!passStillExist) {
+        setSelectedPass(null);
+      }
+    }
+  }, [passesQuery.data, setSelectedPass, selectedPass]);
 
   return (
     <div className="py-3">
