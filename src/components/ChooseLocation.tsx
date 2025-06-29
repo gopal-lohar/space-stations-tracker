@@ -17,8 +17,20 @@ import { Label } from "./ui/label";
 
 export function ChooseLocation({
   setLocation,
+  dropOnMap,
+  setDropOnMap,
 }: {
   setLocation: (value: ObserverLocation | null) => void;
+  dropOnMap: {
+    dropping: boolean;
+    location: ObserverLocation;
+  };
+  setDropOnMap: React.Dispatch<
+    React.SetStateAction<{
+      dropping: boolean;
+      location: ObserverLocation;
+    }>
+  >;
 }) {
   const [error, setError] = useState<string | null>(null);
   const [detecting, setDetecting] = useState<boolean>(false);
@@ -91,6 +103,12 @@ export function ChooseLocation({
             )}
           </div>
           <span className="text-sm">OR</span>
+          <DropOnMap
+            setLocation={setLocation}
+            dropOnMap={dropOnMap}
+            setDropOnMap={setDropOnMap}
+          />
+          <span className="text-sm">OR</span>
           <EnterManuallyDialog setLocation={setLocation} />
         </div>
       </div>
@@ -102,6 +120,45 @@ type FormField = {
   value: string;
   error: string | null;
 };
+
+function DropOnMap({
+  setLocation,
+  dropOnMap,
+  setDropOnMap,
+}: {
+  setLocation: (value: ObserverLocation | null) => void;
+  dropOnMap: {
+    dropping: boolean;
+    location: ObserverLocation;
+  };
+  setDropOnMap: React.Dispatch<
+    React.SetStateAction<{
+      dropping: boolean;
+      location: ObserverLocation;
+    }>
+  >;
+}) {
+  return (
+    <div className="flex flex-col items-center">
+      {dropOnMap.dropping && (
+        <div className="mb-2">
+          <p>Latitude: {dropOnMap.location.latitude}</p>
+          <p>Longitude: {dropOnMap.location.longitude}</p>
+        </div>
+      )}
+      <Button
+        onClick={() => {
+          setDropOnMap((prev) => ({ ...prev, dropping: !prev.dropping }));
+          if (dropOnMap.dropping) {
+            setLocation(dropOnMap.location);
+          }
+        }}
+      >
+        {dropOnMap.dropping ? "Confirm" : "Drop On Map"}
+      </Button>
+    </div>
+  );
+}
 
 function EnterManuallyDialog({
   setLocation,

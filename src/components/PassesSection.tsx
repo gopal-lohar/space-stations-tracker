@@ -17,18 +17,34 @@ export default function PassesSection({
   satellite,
   selectedPass,
   setSelectedPass,
+  dropOnMap,
+  setDropOnMap,
 }: {
   location: ObserverLocation | null;
   setLocation: (value: ObserverLocation | null) => void;
   satellite: Satellite;
   selectedPass: Pass | null;
   setSelectedPass: React.Dispatch<React.SetStateAction<Pass | null>>;
+  dropOnMap: {
+    dropping: boolean;
+    location: ObserverLocation;
+  };
+  setDropOnMap: React.Dispatch<
+    React.SetStateAction<{
+      dropping: boolean;
+      location: ObserverLocation;
+    }>
+  >;
 }) {
   const tleQuery = useTleQuery(satellite.noradId);
   return (
     <div>
       {location == null ? (
-        <ChooseLocation setLocation={setLocation} />
+        <ChooseLocation
+          setLocation={setLocation}
+          dropOnMap={dropOnMap}
+          setDropOnMap={setDropOnMap}
+        />
       ) : (
         <QueryHandler query={tleQuery}>
           {(tle) => {

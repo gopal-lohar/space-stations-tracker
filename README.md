@@ -70,6 +70,12 @@ feel free to contribute.
 3. draw a circle on the map and only check further if the percieved latitude and longitude of satellite fall in that circle (basically not calculating look angle and handling everything in latitude and longitude)
 4. use rust
 
+### Other Improvements
+-[ ] use state management library instead of prop drilling (i didn't expect it to go this complicated)
+-[ ] add theme toggle
+-[ ] use something like an api or a map to get elevation at user's location
+
+
 ## Technical Resources
 
 ### Orbital Mechanics & TLE Format

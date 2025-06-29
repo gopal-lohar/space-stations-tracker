@@ -12,7 +12,7 @@ import type {
 import { cn, degreesToDirection, formatDuration } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowUp, Navigation, X } from "lucide-react";
-import { useEffect, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, type ReactNode } from "react";
 import { QueryHandler } from "./QueryHandler";
 import {
   PointOnMap,
@@ -27,11 +27,23 @@ export default function SatelliteInfo({
   location,
   selectedPass,
   setSelectedPass,
+  dropOnMap,
+  setDropOnMap,
 }: {
   satellite: Satellite;
   location: ObserverLocation | null;
   selectedPass: Pass | null;
   setSelectedPass: React.Dispatch<React.SetStateAction<Pass | null>>;
+  dropOnMap: {
+    dropping: boolean;
+    location: ObserverLocation;
+  };
+  setDropOnMap: React.Dispatch<
+    React.SetStateAction<{
+      dropping: boolean;
+      location: ObserverLocation;
+    }>
+  >;
 }) {
   const tleQuery = useTleQuery(satellite.noradId);
 
@@ -117,6 +129,29 @@ export default function SatelliteInfo({
     enabled: isReady && !!tleQuery.data,
   });
 
+  const mapRef = useRef<HTMLDivElement | null>(null);
+
+  const handleMouse = useCallback(
+    (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+      if (!mapRef.current) return;
+      if (!dropOnMap.dropping) return;
+
+      const rect = mapRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const width = rect.width;
+      const height = rect.height;
+
+      const longitude = (x / width) * 360 - 180;
+      const latitude = 90 - (y / height) * 180;
+      setDropOnMap((prev) => ({
+        ...prev,
+        location: { ...prev.location, longitude, latitude },
+      }));
+    },
+    [mapRef, dropOnMap, setDropOnMap]
+  );
+
   useEffect(() => {
     const now = Date.now();
     if (
@@ -152,7 +187,14 @@ export default function SatelliteInfo({
           "mt-4": selectedPass != null,
         })}
       >
-        <div className="relative -m-4 overflow-hidden">
+        <div
+          className="relative -m-4 overflow-hidden"
+          ref={mapRef}
+          onMouseDown={handleMouse}
+          onMouseMove={(e) => {
+            if (e.buttons === 1) handleMouse(e);
+          }}
+        >
           <WorldMap>
             {satellitePathQuery.data && (
               <SatellitePath path={satellitePathQuery.data.path} />
@@ -164,6 +206,16 @@ export default function SatelliteInfo({
                   longitude: location.longitude,
                   label: "You",
                   color: "green",
+                }}
+              />
+            )}
+            {dropOnMap.dropping && (
+              <PointOnMap
+                point={{
+                  latitude: dropOnMap.location.latitude,
+                  longitude: dropOnMap.location.longitude,
+                  label: "Drop",
+                  color: "red",
                 }}
               />
             )}

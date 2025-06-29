@@ -22,6 +22,14 @@ export default function App() {
     null
   );
   const [selectedPass, setSelectedPass] = useState<Pass | null>(null);
+  const [dropOnMap, setDropOnMap] = useState<{
+    dropping: boolean;
+    location: ObserverLocation;
+  }>({
+    dropping: false,
+    // default to delhi
+    location: { elevation: 0, latitude: 28.6139, longitude: 77.209 },
+  });
 
   return (
     <div className="h-svh">
@@ -34,6 +42,8 @@ export default function App() {
           satellite={satellite}
           selectedPass={selectedPass}
           setSelectedPass={setSelectedPass}
+          dropOnMap={dropOnMap}
+          setDropOnMap={setDropOnMap}
         />
         <PassesSection
           location={location}
@@ -41,6 +51,8 @@ export default function App() {
           satellite={satellite}
           selectedPass={selectedPass}
           setSelectedPass={setSelectedPass}
+          dropOnMap={dropOnMap}
+          setDropOnMap={setDropOnMap}
         />
       </div>
     </div>
