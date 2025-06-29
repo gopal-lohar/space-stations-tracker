@@ -27,7 +27,7 @@ export const satellites: Satellite[] = [
     noradId: 48274,
     shortName: "CSS",
     module: "TIANHE",
-    longName: "China Space Station (Tiangong)",
+    longName: "Chinense Space Station (Tiangong)",
     operator: "China Manned Space Agency",
     launchDate: "2021-04-29",
     mass: 66000,

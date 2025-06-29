@@ -29,21 +29,21 @@ export default function PassesSection({
     <div>
       {location == null ? (
         <ChooseLocation setLocation={setLocation} />
-      ) : tleQuery.isLoading ? (
-        "Fetching TLE..."
-      ) : tleQuery.isError ? (
-        "Failed Fetching TLE"
       ) : (
-        tleQuery.data && (
-          <Passes
-            location={location}
-            setLocation={setLocation}
-            tle={tleQuery.data}
-            satellite={satellite}
-            selectedPass={selectedPass}
-            setSelectedPass={setSelectedPass}
-          />
-        )
+        <QueryHandler query={tleQuery}>
+          {(tle) => {
+            return (
+              <Passes
+                location={location}
+                setLocation={setLocation}
+                tle={tle}
+                satellite={satellite}
+                selectedPass={selectedPass}
+                setSelectedPass={setSelectedPass}
+              />
+            );
+          }}
+        </QueryHandler>
       )}
     </div>
   );

@@ -51,7 +51,7 @@ export async function getIssTle(): Promise<ApiResponse<Tle>> {
   };
 }
 
-// TLE for China Space Station
+// TLE for Chinese Space Station
 export async function getCssTle(): Promise<ApiResponse<Tle>> {
   return {
     error: null,

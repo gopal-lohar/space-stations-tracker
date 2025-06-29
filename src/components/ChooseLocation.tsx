@@ -65,23 +65,35 @@ export function ChooseLocation({
   }, [setLocation]);
 
   return (
-    <div className="flex flex-col items-center gap-2 rounded-md border px-4 py-8">
-      <div className="flex flex-col items-center gap-1">
-        <Button disabled={detecting} onClick={detectLocation}>
-          {detecting ? (
-            <Loading className="text-background size-6" />
-          ) : (
-            "Detect Location"
-          )}
-        </Button>
-        {error && (
+    <div className="py-3">
+      <div className="rounded-md border p-4">
+        <div className="flex gap-2 rounded-md border p-2">
+          <div className="font-bold">Note:</div>
           <div>
-            Error: <span className="text-red-500">{error}</span>
+            <span className="font-bold">Your data location private</span>: All
+            calculations happen directly on your device. Your location is{" "}
+            <span className="font-bold">never sent to any server</span>.
           </div>
-        )}
+        </div>
+        <div className="flex flex-col items-center gap-2 p-4">
+          <div className="flex flex-col items-center gap-1">
+            <Button disabled={detecting} onClick={detectLocation}>
+              {detecting ? (
+                <Loading className="text-background size-6" />
+              ) : (
+                "Detect Location"
+              )}
+            </Button>
+            {error && (
+              <div>
+                Error: <span className="text-red-500">{error}</span>
+              </div>
+            )}
+          </div>
+          <span className="text-sm">OR</span>
+          <EnterManuallyDialog setLocation={setLocation} />
+        </div>
       </div>
-      <span className="text-sm">OR</span>
-      <EnterManuallyDialog setLocation={setLocation} />
     </div>
   );
 }
