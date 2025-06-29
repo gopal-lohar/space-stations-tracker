@@ -62,18 +62,18 @@ the `computePasses`  propogates from start time to the endtime with a delta curr
 ### Improving in Calculations
 feel free to contribute.
 
-1. use a different method then iterating with 30 second interval (Something inspired from the following methods, not exacatly these methods - described here [Real-World Benchmarking](https://celestrak.org/columns/v03n02/))
+- [ ] use a different method then iterating with 30 second interval (Something inspired from the following methods, not exacatly these methods - described here [Real-World Benchmarking](https://celestrak.org/columns/v03n02/))
 	- Bisection Method
 	- Golden Section Method
 	- Newton Rhapson Method
-2. not check for passes in daytime (would cut the calculation in half)
-3. draw a circle on the map and only check further if the percieved latitude and longitude of satellite fall in that circle (basically not calculating look angle and handling everything in latitude and longitude)
-4. use rust
+- [ ] not check for passes in daytime (would cut the calculation in half)
+- [ ] draw a circle on the map and only check further if the percieved latitude and longitude of satellite fall in that circle (basically not calculating look angle and handling everything in latitude and longitude)
+- [ ] use rust
 
 ### Other Improvements
--[ ] use state management library instead of prop drilling (i didn't expect it to go this complicated)
--[ ] add theme toggle
--[ ] use something like an api or a map to get elevation at user's location
+- [ ] use state management library instead of prop drilling (i didn't expect it to go this complicated)
+- [ ] add theme toggle
+- [ ] use something like an api or a map to get elevation at user's location
 
 
 ## Technical Resources
