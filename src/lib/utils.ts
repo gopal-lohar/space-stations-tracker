@@ -46,3 +46,50 @@ export function degreesToDirection(degrees: number) {
 
   return directions[index];
 }
+
+export function formatTime(date: Date, timezone: string = "UTC"): string {
+  const istDate = new Date(date);
+
+  // Format the date and time
+  const options: Intl.DateTimeFormatOptions = {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+    timeZone: timezone,
+  };
+
+  return (
+    new Intl.DateTimeFormat("en-IN", options).format(istDate) + " " + timezone
+  );
+}
+
+export function formatDuration(seconds: number): string {
+  if (seconds === 0) return "0 seconds";
+
+  const timeUnits = [
+    { unit: "y", seconds: 31536000 },
+    { unit: "d", seconds: 86400 },
+    { unit: "h", seconds: 3600 },
+    { unit: "m", seconds: 60 },
+    { unit: "s", seconds: 1 },
+  ];
+
+  const parts: string[] = [];
+  let remaining = seconds;
+
+  for (const { unit, seconds: unitSeconds } of timeUnits) {
+    const count = Math.floor(remaining / unitSeconds);
+    if (count > 0) {
+      remaining %= unitSeconds;
+      parts.push(`${count}${unit}`);
+    }
+  }
+
+  return parts.length === 1
+    ? parts[0]
+    : parts.slice(0, -1).join(", ") + " " + parts[parts.length - 1];
+}

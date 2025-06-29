@@ -9,7 +9,7 @@ import type {
   StateVector,
   Tle,
 } from "@/lib/core/types";
-import { cn, degreesToDirection } from "@/lib/utils";
+import { cn, degreesToDirection, formatDuration } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowUp, Navigation, X } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
@@ -301,6 +301,13 @@ function SelectedPass({
         </Field>
         <Field title="Start Time">
           {new Date(selectedPass.startingTime).toLocaleTimeString()}
+        </Field>
+        <Field title="Duration">
+          {formatDuration(
+            (new Date(selectedPass.endingTime).getTime() -
+              new Date(selectedPass.startingTime).getTime()) /
+              1000
+          )}
         </Field>
         <Field title="End Time">
           {new Date(selectedPass.endingTime).toLocaleTimeString()}
