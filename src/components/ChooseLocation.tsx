@@ -82,7 +82,7 @@ export function ChooseLocation({
         <div className="flex gap-2 rounded-md border p-2">
           <div className="font-bold">Note:</div>
           <div>
-            <span className="font-bold">Your data location private</span>: All
+            <span className="font-bold">Your location is private</span>: All
             calculations happen directly on your device. Your location is{" "}
             <span className="font-bold">never sent to any server</span>.
           </div>
